@@ -1,16 +1,16 @@
 {
-  "variables" : {
-
-  },
-  "builders" : [{
-    "type" : "virtualbox-iso",
-    "guest_os_type" : "Ubuntu_64",
-    "iso_url" : "http://releases.ubuntu.com/15.04/ubuntu-15.04-desktop-amd64.iso",
-    "iso_checksum_type" : "sha256",
-    "iso_checksum" : "a3cfac5c32b217db2cab43f261dcbe2cc546d99ca23e113312fedb78733aef6b",
-    "ssh_username" : "packer",
-    "ssh_password" : "packer",
-    "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
-  }],
-  "provisioners" : []
+  "variables": {},
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "guest_os_type": "Ubuntu_64",
+      "iso_url": "http://releases.ubuntu.com/15.04/ubuntu-15.04-desktop-amd64.iso",
+      "iso_checksum_type": "sha256",
+      "iso_checksum": "a3cfac5c32b217db2cab43f261dcbe2cc546d99ca23e113312fedb78733aef6b",
+      "ssh_username": "packer",
+      "ssh_password": "packer",
+      "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
+    }
+  ],
+  "provisioners": []
 }
