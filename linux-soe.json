@@ -1,5 +1,9 @@
 {
-  "variables": {},
+  "variables": {
+    "ssh_name" : "ssh_user",
+    "ssh_pass" : "ssh_password",
+    "hostname" : "ubntu_test_build"
+  },
   "builders": [
     {
       "type": "virtualbox-iso",
