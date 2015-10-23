@@ -8,9 +8,9 @@
     {
       "type": "virtualbox-iso",
       "guest_os_type": "Ubuntu_64",
-      "iso_url": "http://releases.ubuntu.com/15.04/ubuntu-15.04-server-amd64.iso",
+      "iso_url": "http://releases.ubuntu.com/15.04/ubuntu-15.04-desktop-amd64.iso",
       "iso_checksum_type": "sha256",
-      "iso_checksum": "6501c8545374665823384bbb6235f865108f56d8a30bbf69dd18df73c14ccb84",
+      "iso_checksum": "a3cfac5c32b217db2cab43f261dcbe2cc546d99ca23e113312fedb78733aef6b",
       "ssh_username": "{{user `ssh_name`}}",
       "ssh_password": "{{user `ssh_pass`}}",
       "ssh_wait_timeout": "10000s",
@@ -33,9 +33,12 @@
           "2"
         ]
       ],
-      "boot_wait" : "10s",
+      "boot_wait" : "5s",
       "http_directory" : "http",
+      "http_port_min" : 9000,
+      "http_port_max" : 9000,
       "boot_command": [
+        "<esc><wait>",
         "<esc><wait>",
         "<esc><wait>",
         "<enter><wait>",
