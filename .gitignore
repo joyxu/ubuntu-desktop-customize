@@ -1,3 +1,9 @@
 packer_cache/
 output-*/
 *.log
+apt-ftparchive/
+build/
+indices/
+mount/
+ubuntu-keyring/
+*.iso
