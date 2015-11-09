@@ -1,3 +1,39 @@
+
+####################################################################
+# Disk Partitioning / Boot loader
+####################################################################
+
+### Disk Partitioning ###
+
+# Configure auto partitioner
+ubiquity partman-auto/init_automatically_partition select Guided - use entire disk
+# ubiquity partman-auto/disk string /dev/sda
+ubiquity partman-auto/method string crypto
+# ubiquity partman-auto/choose_recipe select All files in one partition (recommended for new users)
+# ubiquity partman/confirm_write_new_label boolean true
+# ubiquity partman/choose_partition select Finish partitioning and write changes to disk
+# ubiquity partman/confirm boolean  true
+
+####################################################################
+# Localizations / Timezone
+####################################################################
+
+### Keyboard selection ###
+d-i keyboard-configuration/layoutcode string us
+d-i keyboard-configuration/variantcode string
+
+### Locale ###
+d-i debian-installer/locale string en_AU
+
+### Timezone ###
+d-i time/zone select Australia/Melbourne
+d-i clock-setup/utc boolean true
+d-i clock-setup/ntp boolean true
+
+#####################################################################
+# OOTB Desktop preseed
+#####################################################################
+
 # Enable extras.ubuntu.com.
 d-i	apt-setup/extras	boolean true
 # Install the Ubuntu desktop.
@@ -8,4 +44,10 @@ tasksel	tasksel/first	multiselect ubuntu-desktop
 # well keep them installed.
 ubiquity	ubiquity/keep-installed	string icedtea6-plugin openoffice.org
 
-d-i pkgsel/include string cntlm telstra-ca-certificates telstra-pidgin-certificates
+
+########################################################################
+# Install additional packages
+########################################################################
+d-i pkgsel/include string cntlm
+# d-i pkgsel/include string telstra-ca-certificates
+# d-i pkgsel/include string telstra-pidgin-certificates
