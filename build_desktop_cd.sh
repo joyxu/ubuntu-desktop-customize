@@ -157,7 +157,9 @@ APT::FTPArchive::Release::Components "main restricted extras";
 APT::FTPArchive::Release::Description "Ubuntu $VERSION";
 " > "$FTPARCHIVE"/release.conf
   fi
+}
 
+function install_extras {
   # Add extra packages
   mkdir -p "$BUILD/pool/extras/"
   rsync -az "$BASEDIR/extras/" "$BUILD/pool/extras/"
@@ -187,6 +189,7 @@ function build {
   delete_old_keyring
   add_keyring
   build_extras_repo
+  install_extras
   build_cd_image
 }
 
