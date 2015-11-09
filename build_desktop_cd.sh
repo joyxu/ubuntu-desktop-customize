@@ -20,45 +20,56 @@ FTPARCHIVE="$BASEDIR/apt-ftparchive"
 
 set -e
 
-# Clean up old stuff
-for d in "$MOUNT" "$BUILD" "$FTPARCHIVE"; do
-  if [ -e "$d" ]; then
-    rm -rf "$d"
+function clean {
+  # Clean up old stuff
+  for d in "$MOUNT" "$BUILD" "$FTPARCHIVE"; do
+    if [ -e "$d" ]; then
+      rm -rf "$d"
+    fi
+  done
+}
+
+function create_required_folders {
+  # Ensure the folders we need exist
+  for d in "$MOUNT" "$BUILD" "$INDICES" "$FTPARCHIVE"; do
+    if [ ! -e "$d" ]; then
+      mkdir -p "$d"
+    fi
+  done
+}
+
+function extract_base_image {
+  # sync with latest image
+  mount -o loop $ORIG $MOUNT 2>/dev/null
+  rsync -av $MOUNT/ $BUILD/ >/dev/null
+  umount $MOUNT
+}
+
+function delete_old_keyring {
+  # Delete old keyring, if it exists
+  if [ -e "$BUILD/pool/main/u/ubuntu-keyring" ]; then
+    rm -rf "$BUILD/pool/main/u/ubuntu-keyring"
   fi
-done
+}
 
-# Ensure the folders we need exist
-for d in "$MOUNT" "$BUILD" "$INDICES" "$FTPARCHIVE"; do
-  if [ ! -e "$d" ]; then
-    mkdir -p "$d"
+function add_keyring {
+  # Add our keyring
+  mkdir -p "$BUILD/pool/main/u/ubuntu-keyring"
+  cp "$BASEDIR"/ubuntu-keyring/ubuntu-keyring*deb "$BUILD"/pool/main/u/ubuntu-keyring/
+}
+
+function build_extras_repo {
+  # Build extras repo
+  for SUFFIX in extra.main main main.debian-installer restricted restricted.debian-installer; do
+    wget -N -P "$INDICES" http://archive.ubuntu.com/ubuntu/indices/override.$DISTRO.$SUFFIX >/dev/null
+  done
+
+  if [ ! -f "$FTPARCHIVE/apt.conf" ]; then
+    cat "$BUILD/dists/$DISTRO/Release" | egrep -v "^ " | egrep -v "^(Date|MD5Sum|SHA1|SHA256)" | sed 's/: / "/' | sed 's/^/APT::FTPArchive::Release::/' | sed 's/$/";/' > $FTPARCHIVE/apt.conf
   fi
-done
 
-# sync with latest image
-mount -o loop $ORIG $MOUNT 2>/dev/null
-rsync -av $MOUNT/ $BUILD/ >/dev/null
-umount $MOUNT
-
-# Delete old keyring, if it exists
-if [ -e "$BUILD/pool/main/u/ubuntu-keyring" ]; then
-  rm -rf "$BUILD/pool/main/u/ubuntu-keyring"
-fi
-
-# Add our keyring
-mkdir -p "$BUILD/pool/main/u/ubuntu-keyring"
-cp "$BASEDIR"/ubuntu-keyring/ubuntu-keyring*deb "$BUILD"/pool/main/u/ubuntu-keyring/
-
-# Build extras repo
-for SUFFIX in extra.main main main.debian-installer restricted restricted.debian-installer; do
-  wget -N -P "$INDICES" http://archive.ubuntu.com/ubuntu/indices/override.$DISTRO.$SUFFIX >/dev/null
-done
-
-if [ ! -f "$FTPARCHIVE/apt.conf" ]; then
-  cat "$BUILD/dists/$DISTRO/Release" | egrep -v "^ " | egrep -v "^(Date|MD5Sum|SHA1|SHA256)" | sed 's/: / "/' | sed 's/^/APT::FTPArchive::Release::/' | sed 's/$/";/' > $FTPARCHIVE/apt.conf
-fi
-
-if [ ! -f "$FTPARCHIVE/apt-ftparchive-deb.conf" ]; then
-  echo "Dir {
+  if [ ! -f "$FTPARCHIVE/apt-ftparchive-deb.conf" ]; then
+    echo "Dir {
   ArchiveDir \"$BUILD\";
 };
 
@@ -82,10 +93,10 @@ Default {
 Contents {
   Compress \"gzip\";
 };" > $FTPARCHIVE/apt-ftparchive-deb.conf
-fi
+  fi
 
-if [ ! -f "$FTPARCHIVE/apt-ftparchive-udeb.conf" ]; then
-  echo "Dir {
+  if [ ! -f "$FTPARCHIVE/apt-ftparchive-udeb.conf" ]; then
+    echo "Dir {
   ArchiveDir \"$BUILD\";
 };
 
@@ -108,9 +119,9 @@ Default {
 Contents {
   Compress \"gzip\";
 };" > $FTPARCHIVE/apt-ftparchive-udeb.conf
-fi
+  fi
 
-if [ ! -f $FTPARCHIVE/apt-ftparchive-extras.conf ]; then
+  if [ ! -f $FTPARCHIVE/apt-ftparchive-extras.conf ]; then
         echo "Dir {
   ArchiveDir \"$BUILD\";
 };
@@ -133,10 +144,10 @@ Default {
 Contents {
   Compress \"gzip\";
 };" > "$FTPARCHIVE"/apt-ftparchive-extras.conf
-fi
+  fi
 
-if [ ! -f "$FTPARCHIVE/release.conf" ]; then
-  echo "APT::FTPArchive::Release::Origin "Ubuntu";
+  if [ ! -f "$FTPARCHIVE/release.conf" ]; then
+    echo "APT::FTPArchive::Release::Origin "Ubuntu";
 APT::FTPArchive::Release::Label "Ubuntu";
 APT::FTPArchive::Release::Suite "$DISTRO";
 APT::FTPArchive::Release::Version "$VERSION";
@@ -145,25 +156,39 @@ APT::FTPArchive::Release::Architectures "$ARCH";
 APT::FTPArchive::Release::Components "main restricted extras";
 APT::FTPArchive::Release::Description "Ubuntu $VERSION";
 " > "$FTPARCHIVE"/release.conf
-fi
-
-# Add extra packages
-mkdir -p "$BUILD/pool/extras/"
-rsync -az "$BASEDIR/extras/" "$BUILD/pool/extras/"
-mkdir -p "$BUILD/dists/$DISTRO/extras/"
-
-rm $BUILD/dists/$DISTRO/Release*
-for component in main extras; do
-  if [ ! -d "$BUILD/dists/$DISTRO/$component/binary-$ARCH" ]; then
-    mkdir -p "$BUILD/dists/$DISTRO/$component/binary-$ARCH/"
   fi
-  apt-ftparchive packages "$BUILD/pool/$component/" > "$BUILD/dists/$DISTRO/$component/binary-$ARCH/Packages"
-  gzip -c "$BUILD/dists/$DISTRO/$component/binary-$ARCH/Packages" | \
-    tee "$BUILD/dists/$DISTRO/$component/binary-$ARCH/Packages.gz" > /dev/null
-done
 
-apt-ftparchive -c "$FTPARCHIVE/apt.conf" release $BUILD/dists/$DISTRO > $BUILD/dists/$DISTRO/Release
-gpg --output $BUILD/dists/$DISTRO/Release.gpg -ba $BUILD/dists/$DISTRO/Release
+  # Add extra packages
+  mkdir -p "$BUILD/pool/extras/"
+  rsync -az "$BASEDIR/extras/" "$BUILD/pool/extras/"
+  mkdir -p "$BUILD/dists/$DISTRO/extras/"
 
+  rm $BUILD/dists/$DISTRO/Release*
+  for component in main extras; do
+    if [ ! -d "$BUILD/dists/$DISTRO/$component/binary-$ARCH" ]; then
+      mkdir -p "$BUILD/dists/$DISTRO/$component/binary-$ARCH/"
+    fi
+    apt-ftparchive packages "$BUILD/pool/$component/" > "$BUILD/dists/$DISTRO/$component/binary-$ARCH/Packages"
+    gzip -c "$BUILD/dists/$DISTRO/$component/binary-$ARCH/Packages" | \
+      tee "$BUILD/dists/$DISTRO/$component/binary-$ARCH/Packages.gz" > /dev/null
+  done
 
-mkisofs -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -J -hide-rr-moved -o $IMAGE -R $BUILD/
+  apt-ftparchive -c "$FTPARCHIVE/apt.conf" release $BUILD/dists/$DISTRO > $BUILD/dists/$DISTRO/Release
+  gpg --output $BUILD/dists/$DISTRO/Release.gpg -ba $BUILD/dists/$DISTRO/Release
+}
+
+function build_cd_image {
+  mkisofs -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -J -hide-rr-moved -o $IMAGE -R $BUILD/
+}
+
+function build {
+  create_required_folders
+  extract_base_image
+  delete_old_keyring
+  add_keyring
+  build_extras_repo
+  build_cd_image
+}
+
+clean
+build
