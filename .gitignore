@@ -7,3 +7,4 @@ indices/
 mount/
 ubuntu-keyring/
 *.iso
+*.deb

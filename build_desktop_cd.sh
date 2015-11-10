@@ -37,6 +37,10 @@ function create_required_folders {
   done
 }
 
+function download_base_image {
+  wget -N -P "$BASEDIR" "http://releases.ubuntu.com/$VERSION/ubuntu-$VERSION-desktop-$ARCH.iso"
+}
+
 function extract_base_image {
   # sync with latest image
   mount -o loop $ORIG $MOUNT 2>/dev/null
@@ -68,6 +72,7 @@ function build_cd_image {
 
 function build {
   create_required_folders
+  download_base_image
   extract_base_image
   update_preseed
   install_extras
