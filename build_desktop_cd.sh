@@ -10,7 +10,7 @@ VERSION="15.10"
 ARCH="amd64"
 SCRIPT=$(readlink -f $0)
 BASEDIR=`dirname $SCRIPT`
-IMAGE_NAME="Ubuntu 15.10 Custom"
+IMAGE_NAME="Ubuntu $VERSION Custom"
 
 ORIG="$BASEDIR/ubuntu-$VERSION-desktop-$ARCH.iso"
 MOUNT="$BASEDIR/mount"
