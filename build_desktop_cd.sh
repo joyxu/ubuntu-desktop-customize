@@ -49,7 +49,12 @@ function extract_base_image {
 }
 
 function update_preseed {
-  cp -f "$BASEDIR"/ubuntu.seed "$BUILD"/preseed/ubuntu.seed
+  echo "
+################################################################################
+# Custom modifications added below
+################################################################################
+" >> "$BUILD"/preseed/ubuntu.seed
+  cat "$BASEDIR"/extras.seed >> "$BUILD"/preseed/ubuntu.seed
   pushd "$BUILD"
   local checksum=$(md5sum ./preseed/ubuntu.seed)
   sed -i -- "s:[^\s]+\s+\./preseed/ubuntu\.seed:$checksum:g" "$BUILD"/md5sum.txt

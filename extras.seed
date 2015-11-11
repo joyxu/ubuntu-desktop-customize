@@ -1,0 +1,10 @@
+########################################################################
+# Install additional packages
+########################################################################
+
+ubiquity ubiquity/success_command string \
+    mkdir /target/install/; \
+    cp -R /cdrom/extras/* /target/install/; \
+    chroot /target chmod +x /install/postinstall.sh; \
+    chroot /target bash /install/postinstall.sh; \
+    rm -rf /target/install
