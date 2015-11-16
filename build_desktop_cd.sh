@@ -66,6 +66,7 @@ function install_extras {
     mkdir -p "$BUILD"/extras
   fi
   rsync -a "$BASEDIR"/extras/ "$BUILD"/extras
+  chown -R root:root "$BUILD"/extras
   pushd "$BUILD"
   find ./extras -type f -print0 | xargs -0 md5sum >> md5sum.txt
   popd
