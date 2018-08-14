@@ -5,17 +5,17 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-DISTRO="wily"
-VERSION="15.10"
-ARCH="amd64"
-SCRIPT=$(readlink -f $0)
-BASEDIR=`dirname $SCRIPT`
+DISTRO="bionic"
+VERSION="18.04.1"
+ARCH="arm64"
+BASEDIR=`pwd`
+echo $BASEDIR
 IMAGE_NAME="Ubuntu $VERSION Custom"
 
-ORIG="$BASEDIR/ubuntu-$VERSION-desktop-$ARCH.iso"
+ORIG="$BASEDIR/ubuntu-$VERSION-server-$ARCH.iso"
 MOUNT="$BASEDIR/mount"
 BUILD="$BASEDIR/build"
-IMAGE="$BASEDIR/ubuntu-$VERSION-desktop-$ARCH-custom.iso"
+IMAGE="$BASEDIR/ubuntu-$VERSION-server-$ARCH-custom.iso"
 
 set -e
 
@@ -65,6 +65,12 @@ function install_extras {
   if [ ! -d "$BUILD"/extras ]; then
     mkdir -p "$BUILD"/extras
   fi
+
+  rsync -a "$BASEDIR"/kernel/Image.gz "$BUILD"/install/vmlinuz
+  chown -R root:root "$BUILD"/install/vmlinuz
+  rsync -a "$BASEDIR"/kernel/lib "$BUILD"/
+  chown -R root:root "$BUILD"/lib
+
   rsync -a "$BASEDIR"/extras/ "$BUILD"/extras
   chown -R root:root "$BUILD"/extras
   pushd "$BUILD"
@@ -73,12 +79,16 @@ function install_extras {
 }
 
 function build_cd_image {
-  mkisofs -D -r -V "$IMAGE_NAME" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o $IMAGE $BUILD
+  # mkisofs -D -r -V "$IMAGE_NAME" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o $IMAGE $BUILD
+
+  xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 -V 'custom' \
+  -o $IMAGE -J -joliet-long -cache-inodes -e boot/grub/efi.img -no-emul-boot \
+  -append_partition 2 0xef build/boot/grub/efi.img  -partition_cyl_align all $BUILD
 }
 
 function build {
   create_required_folders
-  download_base_image
+  # download_base_image
   extract_base_image
   update_preseed
   install_extras
